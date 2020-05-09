@@ -1,0 +1,5 @@
+.DS_Store
+plots/
+.vscode
+__pycache__
+cache/agregados.csv.gz

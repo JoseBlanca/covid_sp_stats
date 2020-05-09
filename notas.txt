@@ -1,0 +1,25 @@
+* Desde el d�a 17/04/2020 las cifras de UCIs de CL son casos acumulados. Previamente se refieren a personas ingresadas ese d�a.
+**Desde el d�a 28/04/2020 las cifras  UCIs de GA  son casos acumulados. Previamente se refieren a personas ingresadas ese d�a. Se actualizar� la serie cuando est� disponible.
+*** Desde el d�a 11/04/2020 las cifras de hospitalizados de CM son casos acumulados. Previamente se refieren a personas ingresadas ese d�a.
+*** Desde el d�a 12/04/2020 las cifras de UCIs de CM son casos acumulados. Previamente se refieren a personas ingresadas ese d�a.
+**** Desde el d�a 26/04/2020 las cifras de Hospitalizados y UCIs de MD son casos acumulados. Previamente se refieren a personas ingresadas ese d�a. Se actualizar� la serie cuando est� disponible
+
+AN 8.446.561
+AR 1.324.397
+AS 1.019.993
+CB 581.949
+CE 84.434
+CL 2.402.877
+CM 2.038.440
+CN 2.220.270
+CT 7.609.499
+EX 1.062.797
+GA 2.698.764
+IB 1.198.576
+MC 1.494.442
+MD 6.685.471
+ML 84.286
+NC 652.526
+PV 2.181.919
+RI 314.487
+VC 4.998.711
