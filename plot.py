@@ -11,11 +11,9 @@ from matplotlib.figure import Figure
 from data_source import GovermentCovidData
 
 
-def plot_stat(stat_name, data_type, rolling_window_size=config.DEFAULT_ROLLING_WINDOW_SIZE,
+def plot_stat(covid_data, stat_name, data_type, rolling_window_size=config.DEFAULT_ROLLING_WINDOW_SIZE,
               relative_to_pop=True, out_dir=config.PLOTS_DIR):
 
-    covid_data = GovermentCovidData(cache_dir=config.CACHE_DIR,
-                                    cache_expire_seconds=config.CACHE_EXPIRE_SECONDS)
     os.makedirs(out_dir, exist_ok=True)
 
     plot_paths = []
@@ -81,9 +79,14 @@ def generate_html_index(out_dir, paths, base_out_dir):
 if __name__ == '__main__':
 
     out_dir = Path('/Users/jose/devel/JoseBlanca.github.io/covid19/plots')
-    stats = ['casos', 'hospitalizados', 'fallecidos', 'uci']
+    stats = ['hospitalizados', 'fallecidos', 'uci', 'pcr', 'anticuerpo']
     data_types = ['daily', 'cumulative', 'rolling']
     relative_to_pop = True
+
+    covid_data = GovermentCovidData(cache_dir=config.CACHE_DIR,
+                                    cache_expire_seconds=config.CACHE_EXPIRE_SECONDS)
+
+    print(covid_data.most_recent_date)
 
     cumulative_out_dir = out_dir / f'por_{config.NUM_HABS}_habs' if relative_to_pop else 'absoluto'
 
@@ -93,7 +96,7 @@ if __name__ == '__main__':
         data_type_out_dirs = []
         for stat in stats:
             stat_out_dir = data_type_out_dir / stat
-            res = plot_stat(stat, data_type=data_type, relative_to_pop=relative_to_pop, out_dir=stat_out_dir)
+            res = plot_stat(covid_data, stat, data_type=data_type, relative_to_pop=relative_to_pop, out_dir=stat_out_dir)
             generate_html_index(res['out_dir'], res['plot_paths'], base_out_dir=out_dir)
             data_type_out_dirs.append(res['out_dir'])
         generate_html_index(data_type_out_dir, data_type_out_dirs, base_out_dir=out_dir)

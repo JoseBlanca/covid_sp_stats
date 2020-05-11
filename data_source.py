@@ -11,8 +11,8 @@ import datetime
 import pandas
 import numpy
 
-DFRAME_COL_NAMES_BY_STAT_NAME = {'casos': 'CASOS',
-                                 'pcr': 'PCR.',
+DFRAME_COL_NAMES_BY_STAT_NAME = {'pcr': 'PCR+',
+                                 'anticuerpo': 'TestAc+',
                                  'hospitalizados': 'Hospitalizados',
                                  'uci': 'UCI',
                                  'fallecidos': 'Fallecidos',
@@ -145,6 +145,9 @@ class GovermentCovidData:
         time_series.name = stat_name
         return time_series
 
+    @property
+    def most_recent_date(self):
+        return sorted(self._dframe.index)[-1]
 
 
 if __name__ == '__main__':
