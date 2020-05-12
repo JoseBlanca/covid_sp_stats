@@ -12,7 +12,8 @@ from data_source import GovermentCovidData
 
 
 def plot_stat(covid_data, stat_name, data_type, rolling_window_size=config.DEFAULT_ROLLING_WINDOW_SIZE,
-              relative_to_pop=True, out_dir=config.PLOTS_DIR):
+              relative_to_pop=True, out_dir=config.PLOTS_DIR,
+              y_lims=None):
 
     os.makedirs(out_dir, exist_ok=True)
 
@@ -41,11 +42,22 @@ def plot_stat(covid_data, stat_name, data_type, rolling_window_size=config.DEFAU
         elif data_type == 'cumulative':
             y_label = f'{region} {stat_name_for_y_label} acumulados'
         axes.set_ylabel(y_label)
+
+        if y_lims is not None:
+            actual_y_lims = axes.get_ylim()
+            y_lims_to_set = y_lims[:]
+            if y_lims_to_set[0] is None:
+                y_lims_to_set[0] = actual_y_lims[0]
+            if y_lims_to_set[1] is None:
+                y_lims_to_set[1] = actual_y_lims[1]
+            axes.set_ylim(y_lims_to_set)
+
         axes.xaxis.set_tick_params(rotation=45)
         fig.set_tight_layout(True)
         fig.savefig(plot_path)
         axes.cla()
         fig.clf()
+
         del axes
         del fig
         plot_paths.append(plot_path)
@@ -81,25 +93,33 @@ if __name__ == '__main__':
     out_dir = Path('/Users/jose/devel/JoseBlanca.github.io/covid19/plots')
     stats = ['hospitalizados', 'fallecidos', 'uci', 'pcr', 'anticuerpo']
     data_types = ['daily', 'cumulative', 'rolling']
-    relative_to_pop = True
 
     covid_data = GovermentCovidData(cache_dir=config.CACHE_DIR,
                                     cache_expire_seconds=config.CACHE_EXPIRE_SECONDS)
 
     print(covid_data.most_recent_date)
 
-    cumulative_out_dir = out_dir / f'por_{config.NUM_HABS}_habs' if relative_to_pop else 'absoluto'
-
-    out_dirs = []
-    for data_type in data_types:
-        data_type_out_dir = cumulative_out_dir / data_type
-        data_type_out_dirs = []
-        for stat in stats:
-            stat_out_dir = data_type_out_dir / stat
-            res = plot_stat(covid_data, stat, data_type=data_type, relative_to_pop=relative_to_pop, out_dir=stat_out_dir)
-            generate_html_index(res['out_dir'], res['plot_paths'], base_out_dir=out_dir)
-            data_type_out_dirs.append(res['out_dir'])
-        generate_html_index(data_type_out_dir, data_type_out_dirs, base_out_dir=out_dir)
-        out_dirs.append(data_type_out_dir)
-    generate_html_index(cumulative_out_dir, out_dirs, base_out_dir=out_dir)
-    generate_html_index(out_dir, [cumulative_out_dir], base_out_dir=out_dir)
+    cumulative_out_dirs = []
+    for relative_to_pop in [True, False]:
+        if relative_to_pop:
+            cumulative_out_dir = out_dir / f'por_{config.NUM_HABS}_habs'
+        else:
+            cumulative_out_dir = out_dir / 'absoluto'
+        out_dirs = []
+        for data_type in data_types:
+            data_type_out_dir = cumulative_out_dir / data_type
+            data_type_out_dirs = []
+            for stat in stats:
+                stat_out_dir = data_type_out_dir / stat
+                res = plot_stat(covid_data, stat,
+                                data_type=data_type,
+                                relative_to_pop=relative_to_pop,
+                                out_dir=stat_out_dir,
+                                y_lims=[0, None])
+                generate_html_index(res['out_dir'], res['plot_paths'], base_out_dir=out_dir)
+                data_type_out_dirs.append(res['out_dir'])
+            generate_html_index(data_type_out_dir, data_type_out_dirs, base_out_dir=out_dir)
+            out_dirs.append(data_type_out_dir)
+        generate_html_index(cumulative_out_dir, out_dirs, base_out_dir=out_dir)
+        cumulative_out_dirs.append(cumulative_out_dir)
+    generate_html_index(out_dir, cumulative_out_dirs, base_out_dir=out_dir)
