@@ -7,9 +7,16 @@ import os
 import time
 import io
 import datetime
+import tempfile
 
 import pandas
 import numpy
+
+import rpy2.robjects as robjects
+from rpy2.robjects.conversion import localconverter
+from rpy2.robjects import pandas2ri
+from rpy2.robjects.packages import importr
+eps = importr("EpiEstim")
 
 DFRAME_COL_NAMES_BY_STAT_NAME = {'pcr': 'PCR+',
                                  'anticuerpo': 'TestAc+',
@@ -116,19 +123,43 @@ class GovermentCovidData:
         regions = sorted(numpy.unique(self._dframe.loc[:, 'CCAA'].values))
         return regions
 
+    def calculate_r(self, region):
+        dframe = self._dframe
+        col_name = DFRAME_COL_NAMES_BY_STAT_NAME['pcr']
+        cumul_cases = dframe[dframe['CCAA'] == region].loc[:, col_name]
+        daily_cases = cumul_cases.iloc[1:].values - cumul_cases.iloc[:-1].values
+        dates = cumul_cases.index[1:]
+
+        if numpy.any(daily_cases < 0):
+            print('The number of cases from some days are negative, fix it')
+            daily_cases[daily_cases < 0] = 0
+
+        cases_dframe = pandas.DataFrame({"dates": dates, "cases": daily_cases})
+
+        with localconverter(robjects.default_converter + pandas2ri.converter):
+            r_dframe = robjects.conversion.py2rpy(cases_dframe)
+
+        results = eps.estimate_R(r_dframe[1], method="parametric_si", config=eps.make_config(mean_si=5, std_si=1))
+        results = dict(results.items())
+
+        with localconverter(robjects.default_converter + pandas2ri.converter):
+            rhat = robjects.conversion.rpy2py(results["R"])
+
+        mean_r = numpy.array(rhat['Mean(R)'])
+        time_end = dates[int(rhat['t_end'][0]) - 1: int(rhat['t_end'][-1])]
+        return {'mean_r': pandas.Series(mean_r, index=time_end)}
+
     def get_time_series_stat(self, stat_name, region, data_type='daily',
                              rolling_window_size=3, relative_to_pop=True):
 
         if region not in self.regions:
             raise ValueError(f'Unnkown region: {region}')
 
-        col_name = DFRAME_COL_NAMES_BY_STAT_NAME[stat_name]
         dframe = self._dframe
 
+        col_name = DFRAME_COL_NAMES_BY_STAT_NAME[stat_name]
         time_cumul_data = dframe[dframe['CCAA'] == region].loc[:, col_name]
-        #print(dframe.loc[:,col_name])
     
-        #print(time_cumul_data)
         if relative_to_pop:
             time_cumul_data = time_cumul_data / POP_PER_REGION[region] * config.NUM_HABS
 
@@ -154,8 +185,15 @@ if __name__ == '__main__':
 
     covid_data = GovermentCovidData(cache_dir=config.CACHE_DIR,
                                     cache_expire_seconds=config.CACHE_EXPIRE_SECONDS)
-    daily = covid_data.get_time_series_stat('casos', 'VC')
-    cumulative = covid_data.get_time_series_stat('casos', 'VC', data_type='cumulative')
-    rolling = covid_data.get_time_series_stat('casos', 'VC', data_type='rolling')
+
+    daily = covid_data.calculate_r('CT')
+    print(daily['mean_r'])
+    a
+    daily = covid_data.calculate_r('CT')
+    print(daily['mean_r'])
+
+    daily = covid_data.get_time_series_stat('pcr', 'VC')
+    cumulative = covid_data.get_time_series_stat('pcr', 'VC', data_type='cumulative')
+    rolling = covid_data.get_time_series_stat('pcr', 'VC', data_type='rolling')
 
     assert numpy.allclose(daily.cumsum(), cumulative)
